@@ -71,7 +71,7 @@ func TestSourceChannel(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "fortuna: read %d bytes, expected 16384\n", n)
 		t.FailNow()
 	}
-	//cs.Stop()
+	cs.Stop()
 }
 
 func TestSourceWriter(t *testing.T) {
