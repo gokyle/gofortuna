@@ -15,5 +15,9 @@
 
    The documentation for AddRandomEvent contains notes for writing
    new sources of random events to feed the PRNG.
+
+   The book also recommends that the PRNG's seed file be updated
+   regularly; at the very least, at shutdown with an update every
+   ten minutes recommended.
 */
 package fortuna

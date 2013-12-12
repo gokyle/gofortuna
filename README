@@ -1,21 +1,35 @@
-fortuna
+fortuna: an improved PRNG
 
 This is a Go implementation of the Fortuna PRNG[1]. It can be used
 by applications which do not trust the operating system's RNG
-facilities.
+facilities or in cases where acquiring random data via the operating
+system's facilities may not be an option, or where the operating
+system relies on a hardware RNG or other single point of
+compromise/failure.
 
-Current status: not ready for production. The generator component
-is complete, although it could use some work to develop a wrapper
-for the read. This wrapper would allow reading more than the maximum
-number of blocks by calling the generateBlocks function as many
-times as possible.
+The PRNG works by sending random events to the PRNG, such as random
+network traffic, key presses, etc. This is accomplished via sources;
+two sources are provided -- one provides a channel which receives
+byte slices, the other providing a standard io.Writer interface.
+
+This source code may be fetched from the primary repository[2] at
+via Mercurial. There are backups on Github[3] and Bitbucket[4] (via Mercurial).
+
+Currently in progress is an example daemon providing a PRNG over TCP/IP.
+
+For usage instructions on the `fortuna` package, please see the
+README in the package's directory.
 
 
 [1] N. Ferguson, B. Schneier, T. Kohno. Cryptography Engineering.
     Wiley, March 2010. pp142-160.
+[2] http://hg.tyrfingr.is/kyle/gofortuna 
+[3] https://github.com/gokyle/gofortuna
+[4] https://bitbucket.org/kisom/gofortuna
 
 
-License:
+LICENSE
+=======
 Copyright (c) 2013 Kyle Isom <kyle@tyrfingr.is>
 
 Permission to use, copy, modify, and distribute this software for any
