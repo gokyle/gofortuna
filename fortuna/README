@@ -1,4 +1,4 @@
-fishtuna: Fortuna implementation using Twofish and Keccak
+fishtuna: Fortuna implementation using AES-256 and SHA-256.
 
 The core component of this package is the Fortuna type. A new Fortuna
 PRNG should be set up with one of two functions:
