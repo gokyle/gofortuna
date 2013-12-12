@@ -85,7 +85,10 @@ func New(h func() hash.Hash) *Fortuna {
 }
 
 func (rng *Fortuna) mustReseed() bool {
+        rng.pools[0].Lock()
 	poolReseed := rng.pools[0].written >= MinPoolSize
+        rng.pools[0].Unlock()
+
 	rng.lastReseed.Lock()
 	reseed := rng.lastReseed.Time.Add(ReseedDelay)
 	rng.lastReseed.Unlock()
@@ -144,10 +147,12 @@ func (rng *Fortuna) AddRandomEvent(s byte, i int, e []byte) error {
 		return ErrInvalidEvent
 	}
 
+        rng.pools[i].Lock()
 	rng.pools[i].hash = append(rng.pools[i].hash, s)
 	rng.pools[i].hash = append(rng.pools[i].hash, byte(len(e)))
 	rng.pools[i].hash = append(rng.pools[i].hash, e...)
 	rng.pools[i].written += int64(len(e) + 2)
+        rng.pools[i].Unlock()
 	return nil
 }
 
