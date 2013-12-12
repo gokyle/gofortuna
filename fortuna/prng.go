@@ -3,7 +3,6 @@ package fortuna
 import (
 	"crypto/sha256"
 	"errors"
-	"hash"
 	"io"
 	"io/ioutil"
 	"sync"
@@ -50,7 +49,6 @@ type Fortuna struct {
 	pools       *[32]*pool
 	counter     uint32
 	g           *Generator
-	h           func() hash.Hash
 	lastReseed  *reseedTime
 }
 
@@ -64,14 +62,10 @@ func (rng *Fortuna) Initialised() bool {
 
 // New sets up a new Fortuna PRNG; it is required for ensuring that
 // the PRNG is properly initialised.
-func New(h func() hash.Hash) *Fortuna {
-	if h == nil {
-		h = sha256.New
-	}
+func New() *Fortuna {
 	rng := &Fortuna{
 		pools:      new([32]*pool),
 		g:          NewGenerator(),
-		h:          h,
 		lastReseed: &reseedTime{},
 	}
 
@@ -103,7 +97,7 @@ func (rng *Fortuna) reseed() {
 	for i := 0; i < len(rng.pools); i++ {
 		if ((1 << uint32(i)) | rng.counter) != 0 {
 			rng.pools[i].Lock()
-			h := rng.h()
+			h := sha256.New()
 			h.Write(rng.pools[i].hash)
 			s = append(s, h.Sum(nil)...)
 			rng.pools[i].hash = []byte{}
@@ -204,7 +198,7 @@ func (rng *Fortuna) ReadSeed(p []byte) error {
 
 // FromSeed creates a new PRNG instance from the seed file. This
 // can be used to start an RNG on start up.
-func FromSeed(filename string, h func() hash.Hash) (*Fortuna, error) {
+func FromSeed(filename string) (*Fortuna, error) {
 	seed, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -212,7 +206,7 @@ func FromSeed(filename string, h func() hash.Hash) (*Fortuna, error) {
 		return nil, ErrInvalidSeed
 	}
 
-	rng := New(h)
+	rng := New()
 	rng.g.Write(seed)
 	return rng, nil
 }

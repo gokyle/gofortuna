@@ -37,7 +37,7 @@ func newSourceChannel(cs *SourceChannel) error {
 }
 
 func TestSourceChannel(t *testing.T) {
-	rng := New(nil)
+	rng := New()
 	cs := NewSourceChannel(rng, 1)
 	cs.Start(4)
 	err := newSourceChannel(cs)
@@ -75,7 +75,7 @@ func TestSourceChannel(t *testing.T) {
 }
 
 func TestSourceWriter(t *testing.T) {
-	rng := New(nil)
+	rng := New()
 	sw := NewSourceWriter(rng, 2)
 	f, err := os.Open("/dev/random")
 	if err != nil {

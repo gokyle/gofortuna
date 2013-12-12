@@ -19,7 +19,7 @@ func TestNilRNG(t *testing.T) {
 
 func TestNotSeeded(t *testing.T) {
 	var p []byte
-	rng := New(nil)
+	rng := New()
 	if _, err := rng.Read(p); err == nil {
 		fmt.Fprintf(os.Stderr, "tunafish: PRNG should report it is not seeded")
 		t.FailNow()
@@ -28,7 +28,7 @@ func TestNotSeeded(t *testing.T) {
 
 func TestPRNGEmptyRead(t *testing.T) {
 	var p []byte
-	rng := New(nil)
+	rng := New()
 	rng.reseed()
 
 	n, err := rng.Read(p)
@@ -43,7 +43,7 @@ func TestPRNGEmptyRead(t *testing.T) {
 
 func TestInvalidEvents(t *testing.T) {
 	var p = make([]byte, 1)
-	rng := New(nil)
+	rng := New()
 	err := rng.AddRandomEvent(0, 33, p)
 	if err != ErrInvalidEvent {
 		fmt.Fprintf(os.Stderr, "tunafish: random event should be invalid\n")
@@ -74,7 +74,7 @@ func TestInvalidEvents(t *testing.T) {
 var seed []byte
 
 func TestSeed(t *testing.T) {
-	rng := New(nil)
+	rng := New()
 	sw := NewSourceWriter(rng, 0)
 
 	_, err := rng.Seed()
@@ -101,7 +101,7 @@ func TestSeed(t *testing.T) {
 }
 
 func TestReadSeed(t *testing.T) {
-	rng := New(nil)
+	rng := New()
 	err := rng.ReadSeed(seed)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -123,7 +123,7 @@ func TestReadSeed(t *testing.T) {
 }
 
 func TestSeedFiles(t *testing.T) {
-	rng := New(nil)
+	rng := New()
 	sw := NewSourceWriter(rng, 0)
 
 	f, err := os.Open("/dev/zero")
@@ -155,23 +155,23 @@ func TestSeedFiles(t *testing.T) {
 		t.FailNow()
 	}
 
-	if _, err = FromSeed(outFile, nil); err == nil {
+	if _, err = FromSeed(outFile); err == nil {
 		fmt.Fprintln(os.Stderr, "tunafish: restoring from seed shuold fail with short seed", err)
 		t.FailNow()
-	} else if _, err = FromSeed("invalid.seed", nil); err == nil {
+	} else if _, err = FromSeed("invalid.seed"); err == nil {
 		fmt.Fprintf(os.Stderr, "tunafish: restoring from seed should fail with non-existent seed\n")
 		t.FailNow()
 	} else if err = rng.WriteSeed(outFile); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
-	} else if _, err = FromSeed(outFile, nil); err != nil {
+	} else if _, err = FromSeed(outFile); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
 	}
 }
 
 func BenchmarkFortunaRead(b *testing.B) {
-	rng := New(nil)
+	rng := New()
 	sw := NewSourceWriter(rng, 1)
 	n, err := io.CopyN(sw, rand.Reader, 4096)
 	if err != nil {

@@ -3,7 +3,6 @@ package tunafish
 import (
 	"code.google.com/p/go.crypto/sha3"
 	"errors"
-	"hash"
 	"io"
 	"io/ioutil"
 	"sync"
@@ -50,7 +49,6 @@ type Tunafish struct {
 	pools       *[32]*pool
 	counter     uint32
 	g           *Generator
-	h           func() hash.Hash
 	lastReseed  *reseedTime
 }
 
@@ -64,14 +62,10 @@ func (rng *Tunafish) Initialised() bool {
 
 // New sets up a new Fortuna PRNG; it is required for ensuring that
 // the PRNG is properly initialised.
-func New(h func() hash.Hash) *Tunafish {
-	if h == nil {
-		h = sha3.NewKeccak256
-	}
+func New() *Tunafish {
 	rng := &Tunafish{
 		pools:      new([32]*pool),
 		g:          NewGenerator(),
-		h:          h,
 		lastReseed: &reseedTime{},
 	}
 
@@ -103,7 +97,7 @@ func (rng *Tunafish) reseed() {
 	for i := 0; i < len(rng.pools); i++ {
 		if ((1 << uint32(i)) | rng.counter) != 0 {
 			rng.pools[i].Lock()
-			h := rng.h()
+			h := sha3.NewKeccak256()
 			h.Write(rng.pools[i].hash)
 			s = append(s, h.Sum(nil)...)
 			rng.pools[i].hash = []byte{}
@@ -204,7 +198,7 @@ func (rng *Tunafish) ReadSeed(p []byte) error {
 
 // FromSeed creates a new PRNG instance from the seed file. This
 // can be used to start an RNG on start up.
-func FromSeed(filename string, h func() hash.Hash) (*Tunafish, error) {
+func FromSeed(filename string) (*Tunafish, error) {
 	seed, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -212,7 +206,7 @@ func FromSeed(filename string, h func() hash.Hash) (*Tunafish, error) {
 		return nil, ErrInvalidSeed
 	}
 
-	rng := New(h)
+	rng := New()
 	rng.g.Write(seed)
 	return rng, nil
 }

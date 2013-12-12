@@ -1,8 +1,8 @@
 package tunafish
 
 import (
-	"code.google.com/p/go.crypto/twofish"
 	"code.google.com/p/go.crypto/sha3"
+	"code.google.com/p/go.crypto/twofish"
 	"errors"
 )
 
