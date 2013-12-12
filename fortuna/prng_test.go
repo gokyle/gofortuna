@@ -69,9 +69,17 @@ func TestInvalidEvents(t *testing.T) {
 	}
 }
 
+var seed []byte
+
 func TestSeed(t *testing.T) {
 	rng := New(nil)
 	sw := NewSourceWriter(rng, 0)
+
+	_, err := rng.Seed()
+	if err != ErrNotSeeded {
+		fmt.Fprintf(os.Stderr, "fortuna: PRNG seed() should fail for unseeded PRNG")
+		t.FailNow()
+	}
 
 	f, err := os.Open("/dev/zero")
 	if err != nil {
@@ -80,7 +88,7 @@ func TestSeed(t *testing.T) {
 	}
 
 	io.CopyN(sw, f, 4096)
-	seed, err := rng.Seed()
+	seed, err = rng.Seed()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
@@ -88,5 +96,26 @@ func TestSeed(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "fortuna: bad seed file length\n")
 		t.FailNow()
 	}
+}
 
+func TestReadSeed(t *testing.T) {
+	rng := New(nil)
+	err := rng.ReadSeed(seed)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	}
+
+	seed = nil
+	err = rng.ReadSeed(seed)
+	if err == nil {
+		fmt.Fprintf(os.Stderr, "fortuna: ReadSeed should fail\n")
+		t.FailNow()
+	}
+
+	seed = make([]byte, SeedFileLength-1)
+	if err = rng.ReadSeed(seed); err == nil {
+		fmt.Fprintf(os.Stderr, "fortuna: ReadSeed should fail\n")
+		t.FailNow()
+	}
 }
