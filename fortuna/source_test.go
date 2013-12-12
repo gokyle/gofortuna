@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -72,7 +71,7 @@ func TestSourceChannel(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "fortuna: read %d bytes, expected 16384\n", n)
 		t.FailNow()
 	}
-	ioutil.WriteFile("/tmp/fortuna.out", p, 0644)
+	cs.Stop()
 }
 
 func TestSourceWriter(t *testing.T) {
@@ -95,4 +94,28 @@ func TestSourceWriter(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
 	}
+}
+
+func TestUninitialisedPRNG(t *testing.T) {
+	if sc := NewSourceChannel(nil, 3); sc != nil {
+		fmt.Fprintln(os.Stderr, "fortuna: new source should fail for uninitialised PRNG")
+		t.FailNow()
+	}
+
+	if sw := NewSourceWriter(nil, 3); sw != nil {
+		fmt.Fprintln(os.Stderr, "fortuna: new source should fail for uninitialised PRNG")
+		t.FailNow()
+	}
+
+	rng := &Fortuna{}
+	if sc := NewSourceChannel(rng, 3); sc != nil {
+		fmt.Fprintln(os.Stderr, "fortuna: new source should fail for uninitialised PRNG")
+		t.FailNow()
+	}
+
+	if sw := NewSourceWriter(rng, 3); sw != nil {
+		fmt.Fprintln(os.Stderr, "fortuna: new source should fail for uninitialised PRNG")
+		t.FailNow()
+	}
+
 }

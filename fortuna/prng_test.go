@@ -3,6 +3,7 @@ package fortuna
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -116,6 +117,54 @@ func TestReadSeed(t *testing.T) {
 	seed = make([]byte, SeedFileLength-1)
 	if err = rng.ReadSeed(seed); err == nil {
 		fmt.Fprintf(os.Stderr, "fortuna: ReadSeed should fail\n")
+		t.FailNow()
+	}
+}
+
+func TestSeedFiles(t *testing.T) {
+	rng := New(nil)
+	sw := NewSourceWriter(rng, 0)
+
+	f, err := os.Open("/dev/zero")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	}
+
+	io.CopyN(sw, f, 4096)
+	outFile := "test.seed"
+	defer os.Remove(outFile)
+	if err = rng.WriteSeed(outFile); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	} else if err = rng.UpdateSeed(outFile); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	}
+
+	partialSeed := seed[2:]
+	if err = ioutil.WriteFile(outFile, partialSeed, 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	} else if err = rng.UpdateSeed(outFile); err == nil {
+		fmt.Fprintf(os.Stderr, "fortuna: PRNG should not accept an invalid seed\n")
+		t.FailNow()
+	} else if err = rng.UpdateSeed("invalid.seed"); err == nil {
+		fmt.Fprintf(os.Stderr, "fortuna: PRNG should not accept a non-existent seed\n")
+		t.FailNow()
+	}
+
+	if _, err = FromSeed(outFile, nil); err == nil {
+		fmt.Fprintln(os.Stderr, "fortuna: restoring from seed shuold fail with short seed", err)
+		t.FailNow()
+	} else if _, err = FromSeed("invalid.seed", nil); err == nil {
+		fmt.Fprintf(os.Stderr, "fortuna: restoring from seed should fail with non-existent seed\n")
+		t.FailNow()
+	} else if err = rng.WriteSeed(outFile); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		t.FailNow()
+	} else if _, err = FromSeed(outFile, nil); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"hash"
+	"io"
 	"io/ioutil"
 	"sync"
 	"time"
@@ -155,11 +156,9 @@ func (rng *Fortuna) AddRandomEvent(s byte, i int, e []byte) error {
 // restore the PRNG's state.
 func (rng *Fortuna) Seed() ([]byte, error) {
 	var p = make([]byte, SeedFileLength)
-	n, err := rng.Read(p)
+	_, err := io.ReadFull(rng, p)
 	if err != nil {
 		return nil, err
-	} else if n != SeedFileLength {
-		return nil, ErrInvalidSeed
 	}
 	return p, nil
 }
