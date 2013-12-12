@@ -1,6 +1,7 @@
 package fortuna
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -166,5 +167,28 @@ func TestSeedFiles(t *testing.T) {
 	} else if _, err = FromSeed(outFile, nil); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		t.FailNow()
+	}
+}
+
+func BenchmarkFortunaRead(b *testing.B) {
+	rng := New(nil)
+	sw := NewSourceWriter(rng, 1)
+	n, err := io.CopyN(sw, rand.Reader, 4096)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		b.FailNow()
+	} else if n != 4096 {
+		fmt.Fprintln(os.Stderr, "fortuna: failed to seed PRNG")
+		b.FailNow()
+	}
+
+	var p = make([]byte, 4096)
+	for i := 0; i < b.N; i++ {
+		_, err = rng.Read(p)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			b.FailNow()
+		}
+
 	}
 }
