@@ -18,7 +18,8 @@ via Mercurial. There are backups on Github[3] and Bitbucket[4] (via Mercurial).
 Currently in progress is an example daemon providing a PRNG over TCP/IP.
 
 For usage instructions on the `fortuna` package, please see the
-README in the package's directory.
+README in the package's directory. An implementation that uses
+256-bit Twofish and Keccak-256 is provided in the `tunafish` package.
 
 
 [1] N. Ferguson, B. Schneier, T. Kohno. Cryptography Engineering.
