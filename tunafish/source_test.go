@@ -29,6 +29,9 @@ func newSourceChannel(cs *SourceChannel) error {
 				return
 
 			}
+			if cs.In == nil {
+				return
+			}
 			cs.In <- e
 			<-time.After(30 * time.Millisecond)
 		}

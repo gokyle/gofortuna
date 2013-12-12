@@ -56,10 +56,12 @@ func (cs *SourceChannel) Start(buf int) {
 func (cs *SourceChannel) Stop() {
 	if cs.In != nil {
 		close(cs.In)
+		cs.In = nil
 	}
 
 	if cs.Out != nil {
 		close(cs.Out)
+		cs.Out = nil
 	}
 }
 
