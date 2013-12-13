@@ -170,7 +170,7 @@ func TestSeedFiles(t *testing.T) {
 	}
 }
 
-func BenchmarkFortunaRead4096(b *testing.B) {
+func BenchmarkTunafishRead4096(b *testing.B) {
 	rng := New()
 	sw := NewSourceWriter(rng, 1)
 	n, err := io.CopyN(sw, rand.Reader, 4096)

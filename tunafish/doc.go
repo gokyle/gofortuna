@@ -5,7 +5,7 @@
    authors (see pages 142-160). This implementation uses Twofish-256
    and as the underlying PRF and Keccak-256 as the underlying PRG.
 
-   The Fortuna type provided by this package contains the actual
+   The Tunafish type provided by this package contains the actual
    PRNG; clients should use one of the provided sources (or write
    their own) in order to add entropy to the PRNG.
 

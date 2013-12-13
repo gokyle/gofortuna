@@ -12,7 +12,7 @@ import (
 // MinPoolSize stores the number of bytes that will trigger a reseed.
 // The ReseedDelay prevents reseed events from occuring too quickly.
 var (
-	MinPoolSize int64 = 32
+	MinPoolSize int64 = 48
 	ReseedDelay       = 100 * time.Millisecond
 )
 
@@ -28,9 +28,10 @@ const PoolSize = 32
 const SeedFileLength = 64
 
 var (
-	ErrNotSeeded    = errors.New("tunafish: PRNG not seeded yet")
-	ErrInvalidEvent = errors.New("tunafish: invalid random event")
-	ErrInvalidSeed  = errors.New("tunafish: invalid seed")
+	ErrNotSeeded      = errors.New("tunafish: PRNG not seeded yet")
+	ErrInvalidEvent   = errors.New("tunafish: invalid random event")
+	ErrInvalidSeed    = errors.New("tunafish: invalid seed")
+	ErrNotInitialised = errors.New("fortuna: PRNG not initialised")
 )
 
 type pool struct {
@@ -134,6 +135,10 @@ func (rng *Tunafish) Read(p []byte) (int, error) {
 // fashion." The choice of a source identifier is up to the host
 // application.
 func (rng *Tunafish) AddRandomEvent(s byte, i int, e []byte) error {
+	if !rng.Initialised() {
+		return ErrNotInitialised
+	}
+
 	if e == nil || len(e) == 0 || len(e) > MaxEventSize {
 		return ErrInvalidEvent
 	}
@@ -154,6 +159,10 @@ func (rng *Tunafish) AddRandomEvent(s byte, i int, e []byte) error {
 // Seed dumps a byte slice containing a seed that may be used to
 // restore the PRNG's state.
 func (rng *Tunafish) Seed() ([]byte, error) {
+	if !rng.Initialised() {
+		return nil, ErrNotInitialised
+	}
+
 	var p = make([]byte, SeedFileLength)
 	_, err := io.ReadFull(rng, p)
 	if err != nil {
@@ -165,6 +174,10 @@ func (rng *Tunafish) Seed() ([]byte, error) {
 // WriteSeed writes a seed to a file; this should be used for
 // restoring the PRNG state later.
 func (rng *Tunafish) WriteSeed(filename string) error {
+	if !rng.Initialised() {
+		return ErrNotInitialised
+	}
+
 	seed, err := rng.Seed()
 	if err != nil {
 		return err
@@ -175,6 +188,10 @@ func (rng *Tunafish) WriteSeed(filename string) error {
 // UpdateSeed reads a seed from a file and updates the seed file
 // with new random data.
 func (rng *Tunafish) UpdateSeed(filename string) error {
+	if !rng.Initialised() {
+		return ErrNotInitialised
+	}
+
 	seed, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -183,16 +200,22 @@ func (rng *Tunafish) UpdateSeed(filename string) error {
 	}
 
 	rng.g.Write(seed)
+	rng.counter++
 	return rng.WriteSeed(filename)
 }
 
 // ReadSeed reseeds the PRNG with a seed that is expected to have
 // been read from a seed file.
 func (rng *Tunafish) ReadSeed(p []byte) error {
+	if !rng.Initialised() {
+		return ErrNotInitialised
+	}
+
 	if len(p) != SeedFileLength {
 		return ErrInvalidSeed
 	}
 	rng.g.Write(p)
+	rng.counter++
 	return nil
 }
 
@@ -207,6 +230,37 @@ func FromSeed(filename string) (*Tunafish, error) {
 	}
 
 	rng := New()
-	rng.g.Write(seed)
+	rng.ReadSeed(seed)
 	return rng, nil
+}
+
+// AutoUpdate runs in the background, updating the PRNG's seed file
+// every ten minutes. The shutdown channel should be closed when the
+// PRNG is to shut down; it will automatically shutdown the PRNG and
+// prevent any state changes. The fsError channel should be used
+// to report errors (typically file system errors). This should
+// never be closed by any other other means.
+func (rng *Tunafish) AutoUpdate(filename string, shutdown chan interface{}, fsError chan error) {
+	go func() {
+		for {
+			select {
+			case _, ok := <-shutdown:
+				if ok {
+					continue
+				}
+				err := rng.WriteSeed(filename)
+				if err != nil {
+					fsError <- err
+				}
+				close(fsError)
+				rng.initialised = false
+				return
+			case <-time.After(10 * time.Minute):
+				err := rng.WriteSeed(filename)
+				if err != nil {
+					fsError <- err
+				}
+			}
+		}
+	}()
 }
